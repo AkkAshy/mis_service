@@ -9,8 +9,8 @@ from app.core.exceptions import ValidationException, BusinessLogicException
 from app.modules.auth.router import router as auth_router
 from app.modules.patients.router import router as patients_router
 from app.modules.appointments.router import router as appointments_router
-# from app.modules.visits.router import router as visits_router
-# from app.modules.prescriptions.router import router as prescriptions_router
+from app.modules.visits.router import router as visits_router
+from app.modules.prescriptions.router import router as prescriptions_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -68,8 +68,8 @@ async def business_logic_exception_handler(request: Request, exc: BusinessLogicE
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(patients_router, prefix="/patients", tags=["Patients"])
 app.include_router(appointments_router, prefix="/appointments", tags=["Appointments"])
-# app.include_router(visits_router, prefix="/visits", tags=["Visits"])
-# app.include_router(prescriptions_router, prefix="/prescriptions", tags=["Prescriptions"])
+app.include_router(visits_router, prefix="/visits", tags=["Visits"])
+app.include_router(prescriptions_router, prefix="/prescriptions", tags=["Prescriptions"])
 
 @app.get("/")
 def root():
