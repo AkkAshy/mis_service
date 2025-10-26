@@ -49,6 +49,8 @@ class Token(BaseModel):
     """Схема токена"""
     access_token: str
     token_type: str = "bearer"
+    user: User
+    refresh_token: str
 
 
 class TokenData(BaseModel):

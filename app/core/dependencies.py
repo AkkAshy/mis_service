@@ -21,7 +21,7 @@ def get_current_user(
             detail="Invalid authentication credentials"
         )
 
-    username: str = payload.get("sub")
+    username = payload.get("sub")
     if username is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,11 +42,10 @@ def get_current_user(
 def require_role(*roles: str):
     """Декоратор для проверки ролей"""
     def role_checker(current_user = Depends(get_current_user)):
-        # TODO: Раскомментируй когда создашь модель User
-        # if current_user.role not in roles:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail=f"Role '{current_user.role}' is not authorized"
-        #     )
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{current_user.role}' is not authorized"
+            )
         return current_user
     return role_checker
