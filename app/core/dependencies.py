@@ -1,15 +1,15 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.core.security import decode_access_token
 
 security = HTTPBearer()
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Получить текущего пользователя из токена"""
     token = credentials.credentials
@@ -30,7 +30,8 @@ def get_current_user(
 
     # Получаем пользователя из базы данных
     from app.modules.auth.models import User
-    user = db.query(User).filter(User.username == username).first()
+    user = await db.execute(db.query(User).filter(User.username == username))
+    user = user.scalar_one_or_none()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -41,7 +42,7 @@ def get_current_user(
 
 def require_role(*roles: str):
     """Декоратор для проверки ролей"""
-    def role_checker(current_user = Depends(get_current_user)):
+    async def role_checker(current_user = Depends(get_current_user)):
         if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

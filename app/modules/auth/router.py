@@ -3,7 +3,7 @@ Auth Router (API Endpoints)
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import timedelta
 
@@ -18,15 +18,15 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=Token)
-def register_user(
+async def register_user(
     user_data: UserCreate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Регистрация нового пользователя"""
     print(f"🔐 Регистрация пользователя: {user_data.username}")
     try:
         service = AuthService(db)
-        user = service.create_user(user_data)
+        user = await service.create_user(user_data)
 
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
         access_token = create_access_token(
@@ -50,15 +50,15 @@ def register_user(
 
 
 @router.post("/login", response_model=Token)
-def login(
+async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Вход в систему"""
     print(f"🔐 Попытка входа: {form_data.username}")
     try:
         service = AuthService(db)
-        user = service.authenticate_user(UserLogin(username=form_data.username, password=form_data.password))
+        user = await service.authenticate_user(UserLogin(username=form_data.username, password=form_data.password))
 
         if not user:
             print(f"❌ Неверные учетные данные для: {form_data.username}")
@@ -72,7 +72,7 @@ def login(
         access_token = create_access_token(
             data={"sub": user.username}, expires_delta=access_token_expires
         )
-        refresh_token_expires = timedelta(minutes=settings.refresh_token_expire_days)
+        refresh_token_expires = timedelta(days=settings.refresh_token_expire_days)
         refresh_token = create_access_token(
             data={"sub": user.username}, expires_delta=refresh_token_expires
         )
@@ -92,16 +92,16 @@ def login(
 
 
 @router.get("/me", response_model=User)
-def get_current_user_info(current_user: User = Depends(get_current_user)):
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Получить информацию о текущем пользователе"""
     return current_user
 
 
 @router.get("/users", response_model=List[User])
-def get_users(
+async def get_users(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin"))
 ):
     """Получить список пользователей (только для админов)"""
@@ -110,9 +110,9 @@ def get_users(
 
 
 @router.get("/users/{user_id}", response_model=User)
-def get_user(
+async def get_user(
     user_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Получить пользователя по ID"""
@@ -130,10 +130,10 @@ def get_user(
 
 
 @router.put("/users/{user_id}", response_model=User)
-def update_user(
+async def update_user(
     user_id: int,
     user_data: UserUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Обновить пользователя"""
@@ -148,7 +148,7 @@ def update_user(
 @router.post("/refresh", response_model=Token)
 def refresh_token(
     refresh_token: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """Обновление access токена с помощью refresh токена"""
     try:
@@ -198,12 +198,12 @@ def refresh_token(
 
 
 @router.delete("/users/{user_id}")
-def delete_user(
+async def delete_user(
     user_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin"))
 ):
     """Удалить пользователя (только для админов)"""
     service = AuthService(db)
-    service.delete_user(user_id)
+    await service.delete_user(user_id)
     return {"message": "User deleted successfully"}

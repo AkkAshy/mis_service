@@ -4,9 +4,9 @@ uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 
 # База данных
-sqlalchemy==2.0.35
+sqlalchemy[asyncio]==2.0.35
 alembic==1.13.3
-psycopg2-binary==2.9.9 --only-binary :all:
+asyncpg==0.29.0
 
 # Валидация данных
 pydantic==2.9.2

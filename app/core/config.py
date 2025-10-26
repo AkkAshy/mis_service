@@ -11,6 +11,15 @@ class Settings(BaseSettings):
     
     # Database
     database_url: str
+
+    @property
+    def async_database_url(self) -> str:
+        """Асинхронный URL базы данных"""
+        url = self.database_url.replace("postgresql://", "postgresql+asyncpg://")
+        # Удаляем sslmode из URL для asyncpg
+        if "sslmode=" in url:
+            url = url.split("?")[0]  # Убираем query параметры
+        return url
     
     # Security
     secret_key: str
