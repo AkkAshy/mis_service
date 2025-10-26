@@ -1,0 +1,13 @@
+"""
+Импорт всех моделей для Alembic
+Добавляй сюда импорты моделей по мере создания
+"""
+from app.db.session import Base
+
+# Импорты моделей
+from app.modules.auth.models import User
+# Раскомментируй по мере создания моделей
+# from app.modules.patients.models import Patient
+# from app.modules.appointments.models import Appointment
+# from app.modules.visits.models import Visit
+# from app.modules.prescriptions.models import Prescription

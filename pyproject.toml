@@ -1,0 +1,68 @@
+[project]
+name = "medical-information-system"
+version = "1.0.0"
+description = "Medical Information System for private clinics"
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.6",
+    "sqlalchemy>=2.0.35",
+    "alembic>=1.13.3",
+    "psycopg2-binary>=2.9.9",
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.5.2",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[argon2]>=1.7.4",
+    "python-dotenv>=1.0.1",
+    "click>=8.1.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.27.2",
+    "black>=24.8.0",
+    "isort>=5.13.2",
+    "flake8>=7.1.1",
+    "mypy>=1.11.2",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | alembic
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=app --cov-report=html --cov-report=term"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

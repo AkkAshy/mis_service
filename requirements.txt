@@ -1,0 +1,31 @@
+# FastAPI и сервер
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# База данных
+sqlalchemy==2.0.35
+alembic==1.13.3
+psycopg2-binary==2.9.9
+
+# Валидация данных
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Безопасность
+python-jose[cryptography]==3.3.0
+passlib[argon2]==1.7.4
+argon2-cffi==23.1.0
+bcrypt==4.2.0
+
+# Утилиты
+python-dotenv==1.0.1
+python-dateutil==2.9.0
+click==8.1.7
+
+# Опционально (раскомментируй если нужно)
+# email-validator==2.2.0
+# aiofiles==24.1.0
+# jinja2==3.1.4
+# celery==5.4.0
+# redis==5.1.1
