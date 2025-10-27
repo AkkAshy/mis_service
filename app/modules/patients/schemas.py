@@ -15,7 +15,6 @@ class PatientBase(BaseModel):
     date_of_birth: date = Field(..., description="Дата рождения")
     gender: Gender = Field(..., description="Пол")
     phone: Optional[str] = Field(None, max_length=20, description="Телефон")
-    email: Optional[EmailStr] = Field(None, description="Email")
     address: Optional[str] = Field(None, description="Адрес")
 
     # Медицинская информация
@@ -39,7 +38,6 @@ class PatientUpdate(BaseModel):
     date_of_birth: Optional[date] = None
     gender: Optional[Gender] = None
     phone: Optional[str] = Field(None, max_length=20)
-    email: Optional[EmailStr] = None
     address: Optional[str] = None
     blood_type: Optional[BloodType] = None
     allergies: Optional[str] = None

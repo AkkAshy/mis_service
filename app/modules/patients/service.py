@@ -57,7 +57,6 @@ class PatientsService:
             date_of_birth=patient_data.date_of_birth,
             gender=patient_data.gender,
             phone=patient_data.phone,
-            email=patient_data.email,
             address=patient_data.address,
             blood_type=patient_data.blood_type,
             allergies=patient_data.allergies,

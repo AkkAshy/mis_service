@@ -37,7 +37,6 @@ class Patient(Base):
     date_of_birth = Column(Date, nullable=False)
     gender = Column(Enum(Gender), nullable=False)
     phone = Column(String(20), nullable=True)
-    email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
 
     # Медицинская информация
