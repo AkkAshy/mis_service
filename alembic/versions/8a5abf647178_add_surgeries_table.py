@@ -1,8 +1,8 @@
-"""add patients and appointments tables
+"""Add surgeries table
 
-Revision ID: 2865d36f3856
-Revises: a20972001a0c
-Create Date: 2025-10-26 13:28:29.878736
+Revision ID: 8a5abf647178
+Revises: d2acbe15e733
+Create Date: 2025-10-28 00:24:46.876967
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '2865d36f3856'
-down_revision = 'a20972001a0c'
+revision = '8a5abf647178'
+down_revision = 'd2acbe15e733'
 branch_labels = None
 depends_on = None
 

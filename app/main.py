@@ -12,6 +12,9 @@ from app.modules.patients.router import router as patients_router
 from app.modules.appointments.router import router as appointments_router
 from app.modules.visits.router import router as visits_router
 from app.modules.prescriptions.router import router as prescriptions_router
+from app.modules.operations.router import router as operations_router
+from app.modules.stats.router import router as stats_router
+from app.modules.billing.router import router as billing_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -149,6 +152,9 @@ app.include_router(patients_router, prefix="/patients", tags=["Patients"])
 app.include_router(appointments_router, prefix="/appointments", tags=["Appointments"])
 app.include_router(visits_router, prefix="/visits", tags=["Visits"])
 app.include_router(prescriptions_router, prefix="/prescriptions", tags=["Prescriptions"])
+app.include_router(operations_router, prefix="/operations", tags=["Operations"])
+app.include_router(stats_router, prefix="/stats", tags=["Statistics"])
+app.include_router(billing_router, prefix="/billing", tags=["Billing"])
 
 @app.get("/")
 def root():
