@@ -106,7 +106,7 @@ async def get_users(
 ):
     """Получить список пользователей (только для админов)"""
     service = AuthService(db)
-    return service.get_users(skip, limit)
+    return await service.get_users(skip, limit)
 
 
 @router.get("/users/{user_id}", response_model=User)
@@ -117,7 +117,7 @@ async def get_user(
 ):
     """Получить пользователя по ID"""
     service = AuthService(db)
-    user = service.get_user(user_id)
+    user = await service.get_user(user_id)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -142,11 +142,11 @@ async def update_user(
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     service = AuthService(db)
-    return service.update_user(user_id, user_data)
+    return await service.update_user(user_id, user_data)
 
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(
+async def refresh_token(
     refresh_token: str,
     db: AsyncSession = Depends(get_db)
 ):
@@ -169,7 +169,7 @@ def refresh_token(
             )
 
         service = AuthService(db)
-        user = service.get_user_by_username(username)
+        user = await service.get_user_by_username(username)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

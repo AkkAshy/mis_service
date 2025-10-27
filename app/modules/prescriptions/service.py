@@ -1,7 +1,8 @@
 """
 Prescriptions Service (Business Logic Layer)
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
 from fastapi import HTTPException, status
 from .repository import PrescriptionsRepository
@@ -12,41 +13,44 @@ from .schemas import PrescriptionCreate, PrescriptionUpdate, MedicationBase
 class PrescriptionsService:
     """Сервис для бизнес-логики рецептов"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.repository = PrescriptionsRepository(db)
 
-    def get_prescription(self, prescription_id: int) -> Optional[Prescription]:
+    async def get_prescription(self, prescription_id: int) -> Optional[Prescription]:
         """Получить рецепт по ID"""
-        return self.repository.get_prescription_by_id(prescription_id)
+        return await self.repository.get_prescription_by_id(prescription_id)
 
-    def get_prescriptions(self, skip: int = 0, limit: int = 100, patient_id: Optional[int] = None,
+    async def get_prescriptions(self, skip: int = 0, limit: int = 100, patient_id: Optional[int] = None,
                          doctor_id: Optional[int] = None, status: Optional[PrescriptionStatus] = None) -> List[Prescription]:
         """Получить список рецептов с фильтрами"""
-        return self.repository.get_prescriptions(skip, limit, patient_id, doctor_id, status)
+        return await self.repository.get_prescriptions(skip, limit, patient_id, doctor_id, status)
 
-    def get_active_prescriptions(self, patient_id: Optional[int] = None, limit: int = 50) -> List[Prescription]:
+    async def get_active_prescriptions(self, patient_id: Optional[int] = None, limit: int = 50) -> List[Prescription]:
         """Получить активные рецепты"""
-        return self.repository.get_active_prescriptions(patient_id, limit)
+        return await self.repository.get_active_prescriptions(patient_id, limit)
 
-    def create_prescription(self, prescription_data: PrescriptionCreate, created_by: int) -> Prescription:
+    async def create_prescription(self, prescription_data: PrescriptionCreate, created_by: int) -> Prescription:
         """Создать новый рецепт"""
         # Проверяем, что пациент существует
         from app.modules.patients.models import Patient
-        patient = self.db.query(Patient).filter(Patient.id == prescription_data.patient_id).first()
+        result = await self.db.execute(select(Patient).filter(Patient.id == prescription_data.patient_id))
+        patient = result.scalar_one_or_none()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
 
         # Проверяем, что врач существует
         from app.modules.auth.models import User
-        doctor = self.db.query(User).filter(User.id == prescription_data.doctor_id).first()
+        result = await self.db.execute(select(User).filter(User.id == prescription_data.doctor_id))
+        doctor = result.scalar_one_or_none()
         if not doctor:
             raise HTTPException(status_code=404, detail="Doctor not found")
 
         # Проверяем визит, если указан
         if prescription_data.visit_id:
             from app.modules.visits.models import Visit
-            visit = self.db.query(Visit).filter(Visit.id == prescription_data.visit_id).first()
+            result = await self.db.execute(select(Visit).filter(Visit.id == prescription_data.visit_id))
+            visit = result.scalar_one_or_none()
             if not visit:
                 raise HTTPException(status_code=404, detail="Visit not found")
 
@@ -60,7 +64,7 @@ class PrescriptionsService:
             created_by=created_by
         )
 
-        prescription = self.repository.create_prescription(prescription)
+        prescription = await self.repository.create_prescription(prescription)
 
         # Добавляем лекарства
         for medication_data in prescription_data.medications:
@@ -68,13 +72,13 @@ class PrescriptionsService:
                 prescription_id=prescription.id,
                 **medication_data.dict()
             )
-            self.repository.add_medication(medication)
+            await self.repository.add_medication(medication)
 
         return prescription
 
-    def update_prescription(self, prescription_id: int, prescription_data: PrescriptionUpdate) -> Prescription:
+    async def update_prescription(self, prescription_id: int, prescription_data: PrescriptionUpdate) -> Prescription:
         """Обновить рецепт"""
-        prescription = self.repository.get_prescription_by_id(prescription_id)
+        prescription = await self.repository.get_prescription_by_id(prescription_id)
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
 
@@ -83,19 +87,19 @@ class PrescriptionsService:
         for field, value in update_data.items():
             setattr(prescription, field, value)
 
-        return self.repository.update_prescription(prescription)
+        return await self.repository.update_prescription(prescription)
 
-    def delete_prescription(self, prescription_id: int) -> None:
+    async def delete_prescription(self, prescription_id: int) -> None:
         """Удалить рецепт"""
-        prescription = self.repository.get_prescription_by_id(prescription_id)
+        prescription = await self.repository.get_prescription_by_id(prescription_id)
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
 
-        self.repository.delete_prescription(prescription)
+        await self.repository.delete_prescription(prescription)
 
-    def complete_prescription(self, prescription_id: int) -> Prescription:
+    async def complete_prescription(self, prescription_id: int) -> Prescription:
         """Завершить рецепт"""
-        prescription = self.repository.get_prescription_by_id(prescription_id)
+        prescription = await self.repository.get_prescription_by_id(prescription_id)
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
 
@@ -103,11 +107,11 @@ class PrescriptionsService:
             raise HTTPException(status_code=400, detail="Prescription is already completed")
 
         prescription.status = PrescriptionStatus.COMPLETED
-        return self.repository.update_prescription(prescription)
+        return await self.repository.update_prescription(prescription)
 
-    def add_medication(self, prescription_id: int, medication_data: MedicationBase) -> Medication:
+    async def add_medication(self, prescription_id: int, medication_data: MedicationBase) -> Medication:
         """Добавить лекарство к рецепту"""
-        prescription = self.repository.get_prescription_by_id(prescription_id)
+        prescription = await self.repository.get_prescription_by_id(prescription_id)
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
 
@@ -115,11 +119,12 @@ class PrescriptionsService:
             prescription_id=prescription_id,
             **medication_data.dict()
         )
-        return self.repository.add_medication(medication)
+        return await self.repository.add_medication(medication)
 
-    def update_medication(self, medication_id: int, medication_data: MedicationBase) -> Medication:
+    async def update_medication(self, medication_id: int, medication_data: MedicationBase) -> Medication:
         """Обновить лекарство"""
-        medication = self.db.query(Medication).filter(Medication.id == medication_id).first()
+        result = await self.db.execute(select(Medication).filter(Medication.id == medication_id))
+        medication = result.scalar_one_or_none()
         if not medication:
             raise HTTPException(status_code=404, detail="Medication not found")
 
@@ -127,12 +132,13 @@ class PrescriptionsService:
         for field, value in update_data.items():
             setattr(medication, field, value)
 
-        return self.repository.update_medication(medication)
+        return await self.repository.update_medication(medication)
 
-    def delete_medication(self, medication_id: int) -> None:
+    async def delete_medication(self, medication_id: int) -> None:
         """Удалить лекарство"""
-        medication = self.db.query(Medication).filter(Medication.id == medication_id).first()
+        result = await self.db.execute(select(Medication).filter(Medication.id == medication_id))
+        medication = result.scalar_one_or_none()
         if not medication:
             raise HTTPException(status_code=404, detail="Medication not found")
 
-        self.repository.delete_medication(medication)
+        await self.repository.delete_medication(medication)

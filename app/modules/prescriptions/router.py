@@ -2,7 +2,7 @@
 Prescriptions Router (API Endpoints)
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
 from app.db.session import get_db
@@ -15,29 +15,29 @@ router = APIRouter()
 
 
 @router.post("/", response_model=Prescription)
-def create_prescription(
+async def create_prescription(
     prescription_data: PrescriptionCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Создать новый рецепт"""
     service = PrescriptionsService(db)
-    return service.create_prescription(prescription_data, current_user.id)
+    return await service.create_prescription(prescription_data, current_user.id)
 
 
 @router.get("/", response_model=List[PrescriptionSummary])
-def get_prescriptions(
+async def get_prescriptions(
     skip: int = 0,
     limit: int = 100,
     patient_id: Optional[int] = None,
     doctor_id: Optional[int] = None,
     status: Optional[PrescriptionStatus] = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Получить список рецептов с фильтрами"""
     service = PrescriptionsService(db)
-    prescriptions = service.get_prescriptions(skip, limit, patient_id, doctor_id, status)
+    prescriptions = await service.get_prescriptions(skip, limit, patient_id, doctor_id, status)
 
     # Формируем краткую информацию
     result = []
@@ -57,15 +57,15 @@ def get_prescriptions(
 
 
 @router.get("/active", response_model=List[PrescriptionSummary])
-def get_active_prescriptions(
+async def get_active_prescriptions(
     patient_id: Optional[int] = None,
     limit: int = 50,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Получить активные рецепты"""
     service = PrescriptionsService(db)
-    prescriptions = service.get_active_prescriptions(patient_id, limit)
+    prescriptions = await service.get_active_prescriptions(patient_id, limit)
 
     result = []
     for prescription in prescriptions:
@@ -84,14 +84,14 @@ def get_active_prescriptions(
 
 
 @router.get("/{prescription_id}", response_model=Prescription)
-def get_prescription(
+async def get_prescription(
     prescription_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Получить рецепт по ID"""
     service = PrescriptionsService(db)
-    prescription = service.get_prescription(prescription_id)
+    prescription = await service.get_prescription(prescription_id)
 
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
@@ -104,15 +104,15 @@ def get_prescription(
 
 
 @router.put("/{prescription_id}", response_model=Prescription)
-def update_prescription(
+async def update_prescription(
     prescription_id: int,
     prescription_data: PrescriptionUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Обновить рецепт"""
     service = PrescriptionsService(db)
-    prescription = service.get_prescription(prescription_id)
+    prescription = await service.get_prescription(prescription_id)
 
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
@@ -121,18 +121,18 @@ def update_prescription(
     if current_user.role not in ["admin"] and prescription.doctor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return service.update_prescription(prescription_id, prescription_data)
+    return await service.update_prescription(prescription_id, prescription_data)
 
 
 @router.put("/{prescription_id}/complete", response_model=Prescription)
-def complete_prescription(
+async def complete_prescription(
     prescription_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Завершить рецепт"""
     service = PrescriptionsService(db)
-    prescription = service.get_prescription(prescription_id)
+    prescription = await service.get_prescription(prescription_id)
 
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
@@ -141,32 +141,32 @@ def complete_prescription(
     if current_user.role not in ["admin"] and prescription.doctor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return service.complete_prescription(prescription_id)
+    return await service.complete_prescription(prescription_id)
 
 
 @router.delete("/{prescription_id}")
-def delete_prescription(
+async def delete_prescription(
     prescription_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role("admin"))
 ):
     """Удалить рецепт (только для админов)"""
     service = PrescriptionsService(db)
-    service.delete_prescription(prescription_id)
+    await service.delete_prescription(prescription_id)
     return {"message": "Prescription deleted successfully"}
 
 
 # Эндпоинты для работы с лекарствами
 @router.post("/{prescription_id}/medications", response_model=Medication)
-def add_medication(
+async def add_medication(
     prescription_id: int,
     medication_data: MedicationBase,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Добавить лекарство к рецепту"""
     service = PrescriptionsService(db)
-    prescription = service.get_prescription(prescription_id)
+    prescription = await service.get_prescription(prescription_id)
 
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
@@ -175,18 +175,18 @@ def add_medication(
     if current_user.role not in ["admin"] and prescription.doctor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return service.add_medication(prescription_id, medication_data)
+    return await service.add_medication(prescription_id, medication_data)
 
 
 @router.get("/{prescription_id}/medications", response_model=List[Medication])
-def get_prescription_medications(
+async def get_prescription_medications(
     prescription_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Получить лекарства рецепта"""
     service = PrescriptionsService(db)
-    prescription = service.get_prescription(prescription_id)
+    prescription = await service.get_prescription(prescription_id)
 
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
@@ -195,28 +195,28 @@ def get_prescription_medications(
     if current_user.role not in ["admin"] and prescription.doctor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    return service.repository.get_medications_by_prescription(prescription_id)
+    return await service.repository.get_medications_by_prescription(prescription_id)
 
 
 @router.put("/medications/{medication_id}", response_model=Medication)
-def update_medication(
+async def update_medication(
     medication_id: int,
     medication_data: MedicationBase,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Обновить лекарство"""
     service = PrescriptionsService(db)
-    return service.update_medication(medication_id, medication_data)
+    return await service.update_medication(medication_id, medication_data)
 
 
 @router.delete("/medications/{medication_id}")
-def delete_medication(
+async def delete_medication(
     medication_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Удалить лекарство"""
     service = PrescriptionsService(db)
-    service.delete_medication(medication_id)
+    await service.delete_medication(medication_id)
     return {"message": "Medication deleted successfully"}

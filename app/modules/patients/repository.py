@@ -1,7 +1,8 @@
 """
 Patients Repository (Data Access Layer)
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
 from .models import Patient
 
@@ -9,16 +10,17 @@ from .models import Patient
 class PatientsRepository:
     """Repository для работы с пациентами"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def get_patient_by_id(self, patient_id: int) -> Optional[Patient]:
+    async def get_patient_by_id(self, patient_id: int) -> Optional[Patient]:
         """Получить пациента по ID"""
-        return self.db.query(Patient).filter(Patient.id == patient_id).first()
+        result = await self.db.execute(select(Patient).filter(Patient.id == patient_id))
+        return result.scalar_one_or_none()
 
-    def get_patients(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[Patient]:
+    async def get_patients(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[Patient]:
         """Получить список пациентов с пагинацией и поиском"""
-        query = self.db.query(Patient)
+        query = select(Patient)
 
         if search:
             # Поиск по имени, фамилии или телефону
@@ -29,34 +31,37 @@ class PatientsRepository:
                 (Patient.phone.ilike(search_filter))
             )
 
-        return query.offset(skip).limit(limit).all()
+        result = await self.db.execute(query.offset(skip).limit(limit))
+        return result.scalars().all()
 
-    def get_active_patients(self, skip: int = 0, limit: int = 100) -> List[Patient]:
+    async def get_active_patients(self, skip: int = 0, limit: int = 100) -> List[Patient]:
         """Получить список активных пациентов"""
-        return self.db.query(Patient).filter(Patient.is_active == "Y").offset(skip).limit(limit).all()
+        result = await self.db.execute(select(Patient).filter(Patient.is_active == "Y").offset(skip).limit(limit))
+        return result.scalars().all()
 
-    def create_patient(self, patient: Patient) -> Patient:
+    async def create_patient(self, patient: Patient) -> Patient:
         """Создать нового пациента"""
         self.db.add(patient)
-        self.db.commit()
-        self.db.refresh(patient)
+        await self.db.commit()
+        await self.db.refresh(patient)
         return patient
 
-    def update_patient(self, patient: Patient) -> Patient:
+    async def update_patient(self, patient: Patient) -> Patient:
         """Обновить пациента"""
-        self.db.commit()
-        self.db.refresh(patient)
+        await self.db.commit()
+        await self.db.refresh(patient)
         return patient
 
-    def delete_patient(self, patient: Patient) -> None:
+    async def delete_patient(self, patient: Patient) -> None:
         """Удалить пациента (мягкое удаление)"""
         patient.is_active = "N"
-        self.db.commit()
+        await self.db.commit()
 
-    def search_patients_by_name(self, name: str, limit: int = 10) -> List[Patient]:
+    async def search_patients_by_name(self, name: str, limit: int = 10) -> List[Patient]:
         """Поиск пациентов по имени"""
         search_filter = f"%{name}%"
-        return self.db.query(Patient).filter(
+        result = await self.db.execute(select(Patient).filter(
             (Patient.first_name.ilike(search_filter)) |
             (Patient.last_name.ilike(search_filter))
-        ).limit(limit).all()
+        ).limit(limit))
+        return result.scalars().all()
