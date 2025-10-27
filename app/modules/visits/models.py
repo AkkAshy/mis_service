@@ -1,9 +1,9 @@
 """
 Visits Models
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, ForeignKey, Enum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, DateTime, Text, Float, ForeignKey, Enum
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from app.db.session import Base
 import enum
 
@@ -20,78 +20,78 @@ class Diagnosis(Base):
     """Модель диагноза"""
     __tablename__ = "diagnoses"
 
-    id = Column(Integer, primary_key=True, index=True)
-    visit_id = Column(Integer, ForeignKey("visits.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    visit_id: Mapped[int] = mapped_column(ForeignKey("visits.id"), nullable=False)
 
     # Диагноз по МКБ-10
-    icd_code = Column(String(10), nullable=False)  # Код по МКБ-10
-    diagnosis_name = Column(String(255), nullable=False)
-    is_primary = Column(String(1), default="Y", nullable=False)  # Основной диагноз Y/N
+    icd_code: Mapped[str] = mapped_column(String(10), nullable=False)  # Код по МКБ-10
+    diagnosis_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_primary: Mapped[str] = mapped_column(String(1), default="Y", nullable=False)  # Основной диагноз Y/N
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Treatment(Base):
     """Модель лечения"""
     __tablename__ = "treatments"
 
-    id = Column(Integer, primary_key=True, index=True)
-    visit_id = Column(Integer, ForeignKey("visits.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    visit_id: Mapped[int] = mapped_column(ForeignKey("visits.id"), nullable=False)
 
     # Лечение
-    treatment_name = Column(String(255), nullable=False)
-    dosage = Column(String(100), nullable=True)  # Дозировка
-    frequency = Column(String(100), nullable=True)  # Частота приема
-    duration_days = Column(Integer, nullable=True)  # Продолжительность в днях
+    treatment_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    dosage: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Дозировка
+    frequency: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Частота приема
+    duration_days: Mapped[int | None] = mapped_column(nullable=True)  # Продолжительность в днях
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class VitalSigns(Base):
     """Модель жизненных показателей"""
     __tablename__ = "vital_signs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    visit_id = Column(Integer, ForeignKey("visits.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    visit_id: Mapped[int] = mapped_column(ForeignKey("visits.id"), nullable=False)
 
     # Жизненные показатели
-    blood_pressure_systolic = Column(Integer, nullable=True)  # Систолическое давление
-    blood_pressure_diastolic = Column(Integer, nullable=True)  # Диастолическое давление
-    heart_rate = Column(Integer, nullable=True)  # ЧСС
-    temperature = Column(Float, nullable=True)  # Температура
-    weight = Column(Float, nullable=True)  # Вес
-    height = Column(Float, nullable=True)  # Рост
-    bmi = Column(Float, nullable=True)  # ИМТ
+    blood_pressure_systolic: Mapped[int | None] = mapped_column(nullable=True)  # Систолическое давление
+    blood_pressure_diastolic: Mapped[int | None] = mapped_column(nullable=True)  # Диастолическое давление
+    heart_rate: Mapped[int | None] = mapped_column(nullable=True)  # ЧСС
+    temperature: Mapped[float | None] = mapped_column(Float, nullable=True)  # Температура
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)  # Вес
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)  # Рост
+    bmi: Mapped[float | None] = mapped_column(Float, nullable=True)  # ИМТ
 
-    measured_at = Column(DateTime(timezone=True), server_default=func.now())
+    measured_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Visit(Base):
     """Модель визита пациента"""
     __tablename__ = "visits"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
     # Связи
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"), nullable=True)
 
     # Информация о визите
-    status = Column(Enum(VisitStatus), default=VisitStatus.SCHEDULED, nullable=False)
-    visit_date = Column(DateTime(timezone=True), nullable=False)
+    status: Mapped[VisitStatus] = mapped_column(Enum(VisitStatus), default=VisitStatus.SCHEDULED, nullable=False)
+    visit_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # Анамнез и осмотр
-    chief_complaint = Column(Text, nullable=True)  # Основная жалоба
-    history_of_present_illness = Column(Text, nullable=True)  # История настоящего заболевания
-    physical_examination = Column(Text, nullable=True)  # Физикальный осмотр
-    assessment = Column(Text, nullable=True)  # Оценка состояния
-    plan = Column(Text, nullable=True)  # План лечения
+    chief_complaint: Mapped[str | None] = mapped_column(Text, nullable=True)  # Основная жалоба
+    history_of_present_illness: Mapped[str | None] = mapped_column(Text, nullable=True)  # История настоящего заболевания
+    physical_examination: Mapped[str | None] = mapped_column(Text, nullable=True)  # Физикальный осмотр
+    assessment: Mapped[str | None] = mapped_column(Text, nullable=True)  # Оценка состояния
+    plan: Mapped[str | None] = mapped_column(Text, nullable=True)  # План лечения
 
     # Системные поля
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     # Отношения
     patient = relationship("Patient", backref="visits")

@@ -1,7 +1,8 @@
 """
 Patients Models
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, Date, Enum
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, DateTime, Text, Date, Enum
 from sqlalchemy.sql import func
 from app.db.session import Base
 import enum
@@ -30,26 +31,26 @@ class Patient(Base):
     """Модель пациента"""
     __tablename__ = "patients"
 
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(50), nullable=False)
-    last_name = Column(String(50), nullable=False)
-    middle_name = Column(String(50), nullable=True)
-    date_of_birth = Column(Date, nullable=False)
-    gender = Column(Enum(Gender), nullable=False)
-    phone = Column(String(20), nullable=True)
-    address = Column(Text, nullable=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    first_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    middle_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    date_of_birth: Mapped[Date] = mapped_column(Date, nullable=False)
+    gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Медицинская информация
-    blood_type = Column(Enum(BloodType), nullable=True)
-    allergies = Column(Text, nullable=True)  # Аллергии
-    chronic_diseases = Column(Text, nullable=True)  # Хронические заболевания
-    emergency_contact_name = Column(String(100), nullable=True)
-    emergency_contact_phone = Column(String(20), nullable=True)
+    blood_type: Mapped[BloodType | None] = mapped_column(Enum(BloodType), nullable=True)
+    allergies: Mapped[str | None] = mapped_column(Text, nullable=True)  # Аллергии
+    chronic_diseases: Mapped[str | None] = mapped_column(Text, nullable=True)  # Хронические заболевания
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Системные поля
-    is_active = Column(String(1), default="Y", nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    is_active: Mapped[str] = mapped_column(String(1), default="Y", nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     @property
     def full_name(self) -> str:

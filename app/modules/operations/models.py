@@ -1,9 +1,9 @@
 """
 Operations Models
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, Date, ForeignKey, JSON
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from app.db.session import Base
 
 
@@ -11,34 +11,34 @@ class Surgery(Base):
     """Модель операции"""
     __tablename__ = "surgeries"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
     # Связи
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    surgeon_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Хирург
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    surgeon_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)  # Хирург
 
     # Информация об операции
-    operation_name = Column(String(255), nullable=False)  # Название операции
-    operation_date = Column(DateTime(timezone=True), nullable=False)  # Дата и время операции
-    start_time = Column(DateTime(timezone=True), nullable=False)  # Время начала
-    end_time = Column(DateTime(timezone=True), nullable=True)  # Время окончания
+    operation_name: Mapped[str] = mapped_column(String(255), nullable=False)  # Название операции
+    operation_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)  # Дата и время операции
+    start_time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)  # Время начала
+    end_time: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # Время окончания
 
     # Пребывание в палате
-    pre_op_days = Column(Integer, nullable=True)  # Дни в палате до операции
-    post_op_days = Column(Integer, nullable=True)  # Дни в палате после операции
+    pre_op_days: Mapped[int | None] = mapped_column(nullable=True)  # Дни в палате до операции
+    post_op_days: Mapped[int | None] = mapped_column(nullable=True)  # Дни в палате после операции
 
     # Дополнительная информация
-    notes = Column(Text, nullable=True)  # Примечания
-    complications = Column(Text, nullable=True)  # Осложнения
-    outcome = Column(String(100), nullable=True)  # Исход операции
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)  # Примечания
+    complications: Mapped[str | None] = mapped_column(Text, nullable=True)  # Осложнения
+    outcome: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Исход операции
 
     # Динамические поля (JSON для дополнительных данных)
-    additional_data = Column(JSON, nullable=True)  # Дополнительные динамические данные
+    additional_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # Дополнительные динамические данные
 
     # Системные поля
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     # Отношения
     patient = relationship("Patient", backref="surgeries")

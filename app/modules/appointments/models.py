@@ -1,9 +1,9 @@
 """
 Appointments Models
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, DateTime as DT, ForeignKey, Enum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, DateTime, Text, ForeignKey, Enum
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from app.db.session import Base
 import enum
 
@@ -32,29 +32,29 @@ class Appointment(Base):
     """Модель записи на прием"""
     __tablename__ = "appointments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
     # Связи
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     # Информация о записи
-    appointment_type = Column(Enum(AppointmentType), nullable=False)
-    status = Column(Enum(AppointmentStatus), default=AppointmentStatus.SCHEDULED, nullable=False)
+    appointment_type: Mapped[AppointmentType] = mapped_column(Enum(AppointmentType), nullable=False)
+    status: Mapped[AppointmentStatus] = mapped_column(Enum(AppointmentStatus), default=AppointmentStatus.SCHEDULED, nullable=False)
 
     # Дата и время
-    scheduled_date = Column(DT(timezone=True), nullable=False)
-    duration_minutes = Column(Integer, default=30, nullable=False)  # Продолжительность в минутах
+    scheduled_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(default=30, nullable=False)  # Продолжительность в минутах
 
     # Описание и заметки
-    reason = Column(String(255), nullable=True)  # Причина обращения
-    notes = Column(Text, nullable=True)          # Заметки врача
-    symptoms = Column(Text, nullable=True)       # Симптомы
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Причина обращения
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)          # Заметки врача
+    symptoms: Mapped[str | None] = mapped_column(Text, nullable=True)       # Симптомы
 
     # Системные поля
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)  # Кто создал запись
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)  # Кто создал запись
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     # Отношения
     patient = relationship("Patient", backref="appointments")
