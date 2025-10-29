@@ -45,6 +45,7 @@ class Appointment(AppointmentBase):
     # Дополнительная информация
     patient_name: Optional[str] = None
     doctor_name: Optional[str] = None
+    visit_id: Optional[int] = None  # ID созданного визита
 
     class Config:
         from_attributes = True

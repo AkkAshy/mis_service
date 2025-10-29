@@ -8,6 +8,8 @@ from fastapi import HTTPException, status
 from .repository import AppointmentsRepository
 from .models import Appointment, AppointmentStatus, AppointmentType
 from .schemas import AppointmentCreate, AppointmentUpdate
+from app.modules.visits.service import VisitsService
+from app.modules.visits.schemas import VisitCreate
 
 
 class AppointmentsService:
@@ -146,8 +148,8 @@ class AppointmentsService:
         appointment.status = AppointmentStatus.CONFIRMED
         return await self.repository.update_appointment(appointment)
 
-    async def complete_appointment(self, appointment_id: int) -> Appointment:
-        """Завершить запись"""
+    async def complete_appointment(self, appointment_id: int, created_by: int) -> Appointment:
+        """Завершить запись и создать визит"""
         appointment = await self.repository.get_appointment_by_id(appointment_id)
         if not appointment:
             raise HTTPException(
@@ -162,4 +164,24 @@ class AppointmentsService:
             )
 
         appointment.status = AppointmentStatus.COMPLETED
-        return await self.repository.update_appointment(appointment)
+        appointment = await self.repository.update_appointment(appointment)
+
+        # Создаем визит на основе завершенной записи
+        visit_service = VisitsService(self.db)
+        visit_data = VisitCreate(
+            patient_id=appointment.patient_id,
+            doctor_id=appointment.doctor_id,
+            appointment_id=appointment.id,
+            visit_date=datetime.now(),  # Используем текущее время как дату визита
+            chief_complaint=appointment.symptoms,  # Симптомы как основная жалоба
+            history_of_present_illness=None,
+            physical_examination=None,
+            assessment=None,
+            plan=None
+        )
+        visit = await visit_service.create_visit(visit_data, created_by)
+
+        # Добавляем ID визита к ответу
+        appointment.visit_id = visit.id
+
+        return appointment

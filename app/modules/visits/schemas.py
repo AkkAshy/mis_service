@@ -94,6 +94,9 @@ class VisitUpdate(BaseModel):
     physical_examination: Optional[str] = None
     assessment: Optional[str] = None
     plan: Optional[str] = None
+    vital_signs: Optional[VitalSignsBase] = None
+    diagnoses: Optional[List[DiagnosisBase]] = Field(default_factory=list)
+    treatments: Optional[List[TreatmentBase]] = Field(default_factory=list)
 
 
 class Visit(VisitBase):

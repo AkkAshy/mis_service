@@ -93,12 +93,50 @@ class VisitsService:
         if not visit:
             raise HTTPException(status_code=404, detail="Visit not found")
 
-        # Обновляем поля
-        update_data = visit_data.dict(exclude_unset=True)
+        # Обновляем основные поля визита
+        update_data = visit_data.dict(exclude_unset=True, exclude={'vital_signs', 'diagnoses', 'treatments'})
         for field, value in update_data.items():
             setattr(visit, field, value)
 
-        return await self.repository.update_visit(visit)
+        visit = await self.repository.update_visit(visit)
+
+        # Обновляем жизненные показатели
+        if visit_data.vital_signs:
+            await self.update_vital_signs(visit_id, visit_data.vital_signs)
+
+        # Обновляем диагнозы (удаляем старые и добавляем новые)
+        if visit_data.diagnoses is not None:
+            # Удаляем существующие диагнозы
+            existing_diagnoses = await self.repository.get_diagnoses_by_visit(visit_id)
+            for diagnosis in existing_diagnoses:
+                await self.db.delete(diagnosis)
+            await self.db.commit()
+
+            # Добавляем новые диагнозы
+            for diagnosis_data in visit_data.diagnoses:
+                diagnosis = Diagnosis(
+                    visit_id=visit_id,
+                    **diagnosis_data.dict()
+                )
+                await self.repository.add_diagnosis(diagnosis)
+
+        # Обновляем назначения лечения (удаляем старые и добавляем новые)
+        if visit_data.treatments is not None:
+            # Удаляем существующие назначения
+            existing_treatments = await self.repository.get_treatments_by_visit(visit_id)
+            for treatment in existing_treatments:
+                await self.db.delete(treatment)
+            await self.db.commit()
+
+            # Добавляем новые назначения
+            for treatment_data in visit_data.treatments:
+                treatment = Treatment(
+                    visit_id=visit_id,
+                    **treatment_data.dict()
+                )
+                await self.repository.add_treatment(treatment)
+
+        return visit
 
     async def delete_visit(self, visit_id: int) -> None:
         """Удалить визит"""

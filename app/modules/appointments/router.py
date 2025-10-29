@@ -106,6 +106,6 @@ async def complete_appointment(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Завершить запись на прием"""
+    """Завершить запись на прием и создать визит"""
     service = AppointmentsService(db)
-    return await service.complete_appointment(appointment_id)
+    return await service.complete_appointment(appointment_id, current_user.id)
